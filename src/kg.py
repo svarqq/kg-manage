@@ -15,7 +15,7 @@ class KnowledgeGraph:
 
     def __init__(self, attr_trips: Sequence[AttributeTriple] = None, rel_quads: Sequence[RelationQuadruple] = None) -> None:
         self.mdg = nx.MultiDiGraph()
-        self.relations = set()
+        self._relations = set()
         if attr_trips:
             self.add_attribute_triples(attr_trips)
         if rel_quads:
@@ -35,17 +35,21 @@ class KnowledgeGraph:
     def add_relation_quadruples(self, rel_quads: Sequence[RelationQuadruple]) -> None:
         edges = [(src_entity, dest_entity, relation, attributes)
                  for src_entity, relation, dest_entity, attributes in rel_quads]
+        self._relations.update([relation for _, relation, _, _ in rel_quads])
         self.mdg.add_edges_from(edges)
     
     def add_relation_quadruple(self, rel_quad: RelationQuadruple) -> None:
         self.mdg.add_edge(rel_quad[0], rel_quad[2], key=rel_quad[1], **rel_quad[3])
-        self.relations.add(rel_quad[1])
-
+        self._relations.add(rel_quad[1])
+    
 
     # Methods for accessing KG data
 
     def entities(self) -> Set[Entity]:
         return set(self.mdg.nodes())
+    
+    def relations(self) -> Set[Relation]:
+        return self._relations
     
     def attribute_triples(self, entity: Entity = None) -> Set[AttributeTriple]:
         if entity:
