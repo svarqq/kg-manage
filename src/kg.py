@@ -87,6 +87,14 @@ class KnowledgeGraph:
         self, head_entity: Entity = None, tail_entity: Entity = None
     ) -> List[RelationQuadruple]:
         if head_entity and tail_entity:
+            if head_entity not in self.entities():
+                raise LookupError(
+                    f"Entity {head_entity} not in knowledge graph"
+                )
+            elif tail_entity not in self.entities():
+                raise LookupError(
+                    f"Entity {tail_entity} not in knowledge graph"
+                )
             all_edges_from_head = list(
                 self.mdg.edges(head_entity, data=True, keys=True)
             )
@@ -94,6 +102,10 @@ class KnowledgeGraph:
                 edge for edge in all_edges_from_head if edge[1] == tail_entity
             ]
         elif head_entity:
+            if head_entity not in self.entities():
+                raise LookupError(
+                    f"Entity {head_entity} not in knowledge graph"
+                )
             edges = list(self.mdg.edges(head_entity, data=True, keys=True))
         else:
             edges = list(self.mdg.edges(data=True, keys=True))
