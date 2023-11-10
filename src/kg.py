@@ -103,57 +103,78 @@ class KnowledgeGraph:
         ]
         return quads
 
-    def relation_triples(self, head_entity: Entity = None, tail_entity: Entity = None) -> Set[RelationTriple]:
+    def relation_triples(
+        self, head_entity: Entity = None, tail_entity: Entity = None
+    ) -> Set[RelationTriple]:
         quads = self.relation_quadruples(head_entity, tail_entity)
         triples = [quad[:3] for quad in quads]
         return set(triples)
 
     # Ontology maintenance from adding or removing entities or relations
 
-    def _maintain_onto_adding_trips(self, attr_trips: Sequence[AttributeTriple]) -> None:
+    def _maintain_onto_adding_trips(
+        self, attr_trips: Sequence[AttributeTriple]
+    ) -> None:
         # Update ontology relation triples if type is updated
-        new_type_triples = [attr_trip for attr_trip in attr_trips if attr_trip[1] == "type"]
+        new_type_triples = [
+            attr_trip for attr_trip in attr_trips if attr_trip[1] == "type"
+        ]
         onto_update = Counter()
         for new_type_triple in new_type_triples:
             head_entity = new_type_triple[0]
             if head_entity in self.entities():
                 # Relations from head entity might exist
-                old_head_type = [attr_trip[2] for attr_trip 
-                    in self.attribute_triples(head_entity) if attr_trip[1] == "type"]
+                old_head_type = [
+                    attr_trip[2]
+                    for attr_trip in self.attribute_triples(head_entity)
+                    if attr_trip[1] == "type"
+                ]
                 old_head_type = old_head_type[0] if old_head_type else "unknown"
                 new_head_type = new_type_triple[2]
                 for relation_quad in self.relation_quadruples(head_entity):
                     tail_entity = relation_quad[2]
-                    tail_type = [attr_trip[2] for attr_trip 
-                        in self.attribute_triples(tail_entity) if attr_trip[1] == "type"]
+                    tail_type = [
+                        attr_trip[2]
+                        for attr_trip in self.attribute_triples(tail_entity)
+                        if attr_trip[1] == "type"
+                    ]
                     tail_type = tail_type[0] if tail_type else "unknown"
 
                     relation = relation_quad[1]
                     old_onto_triple = (old_head_type, relation, tail_type)
                     new_onto_triple = (new_head_type, relation, tail_type)
                     if old_onto_triple != new_onto_triple:
-                        onto_update.update({old_onto_triple: -1, new_onto_triple: 1})
-        
+                        onto_update.update(
+                            {old_onto_triple: -1, new_onto_triple: 1}
+                        )
+
         self._ontology.update(onto_update)
-    
-    def _maintain_onto_adding_quads(self, rel_quads: Sequence[RelationQuadruple]) -> None:
+
+    def _maintain_onto_adding_quads(
+        self, rel_quads: Sequence[RelationQuadruple]
+    ) -> None:
         onto_triples = []
         for rel_quad in rel_quads:
             if rel_quad[:3] in self.relation_triples():
                 continue
 
             head_entity, relation, tail_entity = rel_quad[:3]
-            head_type = [attr_trip[2] for attr_trip 
-                    in self.attribute_triples(head_entity) if attr_trip[1] == "type"]
+            head_type = [
+                attr_trip[2]
+                for attr_trip in self.attribute_triples(head_entity)
+                if attr_trip[1] == "type"
+            ]
             head_type = head_type[0] if head_type else "unknown"
-            tail_type = [attr_trip[2] for attr_trip 
-                    in self.attribute_triples(tail_entity) if attr_trip[1] == "type"]
+            tail_type = [
+                attr_trip[2]
+                for attr_trip in self.attribute_triples(tail_entity)
+                if attr_trip[1] == "type"
+            ]
             tail_type = tail_type[0] if tail_type else "unknown"
             onto_triple = (head_type, relation, tail_type)
             onto_triples += [onto_triple]
         self._ontology.update(onto_triples)
 
-    
     # Sanity check - manual ontology generation
 
     def _generate_onto_from_mdg(self) -> None:
