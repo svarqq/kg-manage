@@ -9,6 +9,7 @@ Attribute = str
 Entity = str | int
 Relation = str | int
 AttributeTriple = Tuple[Entity, Attribute, Any]
+RelationTriple = Tuple[Entity, Relation, Entity]
 RelationQuadruple = Tuple[Entity, Relation, Entity, Mapping[Attribute, Any]]
 
 
@@ -86,22 +87,26 @@ class KnowledgeGraph:
         self, head_entity: Entity = None, tail_entity: Entity = None
     ) -> List[RelationQuadruple]:
         if head_entity and tail_entity:
-            all_quads_from_head = list(
+            all_edges_from_head = list(
                 self.mdg.edges(head_entity, data=True, keys=True)
             )
-            quads = [
-                quad for quad in all_quads_from_head if quad[1] == tail_entity
+            edges = [
+                edge for edge in all_edges_from_head if edge[1] == tail_entity
             ]
         elif head_entity:
-            quads = list(self.mdg.edges(head_entity, data=True, keys=True))
+            edges = list(self.mdg.edges(head_entity, data=True, keys=True))
         else:
-            quads = list(self.mdg.edges(data=True, keys=True))
+            edges = list(self.mdg.edges(data=True, keys=True))
         quads = [
             (src_entity, relation, dest_entity, attributes)
-            for src_entity, dest_entity, relation, attributes in quads
+            for src_entity, dest_entity, relation, attributes in edges
         ]
         return quads
 
+    def relation_triples(self, head_entity: Entity = None, tail_entity: Entity = None) -> Set[RelationTriple]:
+        quads = self.relation_quadruples(head_entity, tail_entity)
+        triples = [quad[:3] for quad in quads]
+        return set(triples)
 
     # Ontology maintenance from adding or removing entities or relations
 
@@ -134,6 +139,9 @@ class KnowledgeGraph:
     def _maintain_onto_adding_quads(self, rel_quads: Sequence[RelationQuadruple]) -> None:
         onto_triples = []
         for rel_quad in rel_quads:
+            if rel_quad[:3] in self.relation_triples():
+                continue
+
             head_entity, relation, tail_entity = rel_quad[:3]
             head_type = [attr_trip[2] for attr_trip 
                     in self.attribute_triples(head_entity) if attr_trip[1] == "type"]
