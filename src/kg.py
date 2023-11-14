@@ -26,6 +26,18 @@ class KnowledgeGraph:
         if rel_quads:
             self.add_relation_quadruples(rel_quads)
 
+    # Class adaptors - convert to/from other classes
+
+    @classmethod
+    def kg_from_mdg(cls, mdg: nx.MultiDiGraph):
+        kg = cls()
+        kg.mdg = mdg
+        kg._generate_onto_from_mdg()
+        return kg
+
+    def to_mdg(self) -> nx.MultiDiGraph:
+        return self.mdg
+
     # Methods for KG management
 
     def add_attribute_triples(
@@ -186,8 +198,6 @@ class KnowledgeGraph:
             onto_triple = (head_type, relation, tail_type)
             onto_triples += [onto_triple]
         self._ontology.update(onto_triples)
-
-    # Sanity check - manual ontology generation
 
     def _generate_onto_from_mdg(self) -> None:
         ontology = Counter()
